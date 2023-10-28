@@ -2,18 +2,53 @@ import ApartmentModel from "../../models/ApartmentModel";
 import { useEffect, useState } from "react";
 import { SpinnerLoading } from "../Utils/SpinnerLoading";
 import RentModel from "../../models/RentModel";
+import { Link } from "react-router-dom";
+import { AddNewRent } from "../ManageDataPages/AddNewRent";
+import { useOktaAuth } from "@okta/okta-react";
 
 export const InformationPage = () => {
 
     const [apartment, setApartment] = useState<ApartmentModel>();
     const [rent, setRent] = useState<RentModel>();
     const [isLoadingApartment, setIsLoadingApartment] = useState(true);
-    const [isLoadingRent, setIsLoadingRent] = useState(false);
+    const [isLoadingRent, setIsLoadingRent] = useState(true);
     const [httpError, setHttpError] = useState(null);
     const [daysLeft, setDaysLeft] = useState(0);
     const [isLoadingDaysLeft, setIsLoadingDaysLeft] = useState(true);
 
+    const [isRented, setIsRented] = useState(0);
+
     const apartmentId = (window.location.pathname).split('/')[2];
+
+
+    async function renewEndDate() {
+            const url = `http://localhost:8080/api/rents/extendLease?apartmentId=${apartmentId}`;
+            const requestOptions = {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            const returnResponse = await fetch(url, requestOptions);
+
+            if (!returnResponse.ok) {
+                throw new Error('Something went wrong!');
+            }
+    }
+
+    async function endLease() {
+            const url = `http://localhost:8080/api/rents/endLease?apartmentId=${apartmentId}`;
+            const requestOptions = {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            const returnResponse = await fetch(url, requestOptions);
+            if (!returnResponse.ok) {
+                throw new Error('Something went wrong!');
+            }
+    }
 
     useEffect(() => {
         const fetchApartment = async () => {
@@ -63,12 +98,14 @@ export const InformationPage = () => {
                 end_date: responseJson.endDate,
                 deposit: responseJson.deposit,
                 fee: responseJson.fee,
+
                 tenant_name: responseJson.tenantName,
                 tenant_email: responseJson.tenantEmail,
                 tenant_number: responseJson.tenantNumber,
             };
 
             setRent(loadedRent);
+            setIsRented(loadedRent.deposit);
             setIsLoadingRent(false);
         }
         fetchRent().catch((error: any) => {
@@ -78,21 +115,27 @@ export const InformationPage = () => {
 
     useEffect(() => {
         const fetchDaysLeft = async () => {
-            const baseUrl: string = `http://localhost:8080/api/rents/daysLeft?apartmentId=${apartmentId}`;
+                const baseUrl: string = `http://localhost:8080/api/rents/daysLeft?apartmentId=${apartmentId}`;
+                const requestOptions = {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
 
-            const response = await fetch(baseUrl);
+                const response = await fetch(baseUrl, requestOptions);
 
-            if (!response.ok) {
-                throw new Error('Something went wrong!');
+                if (!response.ok) {
+                    throw new Error('Something went wrong!');
+                }
+
+                const responseJson = await response.json();
+
+                setDaysLeft(responseJson.daysLeft);
+                setIsLoadingDaysLeft(false);
             }
-
-            const responseJson = await response.json();
-
-            setDaysLeft(responseJson.daysLeft);
-            setIsLoadingDaysLeft(false);
-        }
         fetchDaysLeft().catch((error: any) => {
-            setIsLoadingRent(false);
+            setIsLoadingDaysLeft(false);
         })
     });
 
@@ -116,10 +159,11 @@ export const InformationPage = () => {
             <div className='container d-none d-lg-block'>
                 <div className='row mt-5'>
                     <div className='ml-2'>
-                        <h2 className='text'>{apartment?.title}</h2>
-                        <h4 className='lead'>{apartment?.address}</h4>
+
                         <div className="row align-items-start">
                             <dl className="col">
+                                <h2 className='text'>{apartment?.title}</h2>
+                                <h4 className='lead'>{apartment?.address}</h4>
                                 <hr />
                                 <h5 className='text'>Dane najemcy mieszkania:</h5>
                                 <h4 className="lead">{rent?.tenant_name}</h4>
@@ -138,18 +182,29 @@ export const InformationPage = () => {
                                 <h5 className='text'>Kaucja:</h5>
                                 <h4 className="lead">{rent?.deposit} zł</h4>
                             </dl>
-                            <dl className="col">
-                                <div className="col-3 mx-auto">
-                                    <a type='button' className='btn main-color btn-info-layout btn-md fw-bold text-white'
-                                        href='#'>Zobacz rachunki</a>
-                                    <a type='button' className='btn main-color btn-info-layout btn-md fw-bold text-white'
-                                        href='#'>Dodaj rachunek</a>
-                                    <a type='button' className='btn main-color btn-info-layout btn-md fw-bold text-white'
-                                        href='#'>Wydłuż najem</a>
-                                    <a type='button' className='btn main-color btn-info-layout btn-md fw-bold text-white'
-                                        href='#'>Zakończ najem</a>
-                                </div>
-                            </dl>
+                            {isRented > 0 ?
+                                <dl className="col">
+                                    <div className="col-3 mx-auto">
+                                        <Link type='button' className='btn main-color btn-info-layout fw-bold text-white'
+                                            to={`/editApartment/${apartmentId}`}>Edytuj dane mieszkania</Link>
+                                        <Link type='button' className='btn main-color btn-info-layout fw-bold text-white'
+                                            to={`/editRent/${apartmentId}`}>Edytuj dane najmu</Link>
+                                        <hr />
+                                        <Link type='button' className='btn main-color btn-info-layout fw-bold text-white'
+                                            to={`/bills/${apartmentId}`}>Zobacz rachunki</Link>
+                                        <button type='button' className='btn main-color btn-info-layout btn-md fw-bold text-white' onClick={renewEndDate}>
+                                            Wydłuż najem
+                                        </button>
+                                        <button type='button' className='btn main-color btn-info-layout btn-md fw-bold text-white' onClick={endLease}>
+                                            Zakończ najem
+                                        </button>
+                                    </div>
+                                </dl>
+                                :
+                                <dl className="col">
+                                    <AddNewRent />
+                                </dl>
+                            }
                         </div>
                     </div>
                 </div>

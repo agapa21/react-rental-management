@@ -4,14 +4,15 @@ class RentModel {
     apartment_id: number;
     start_date: string;
     end_date: string;
-    deposit: number;
-    fee: number;
+    deposit: any;
+    fee: any;
     tenant_name: string;
     tenant_email: string;
     tenant_number: string;
 
-    constructor(id: number, apartment_id: number, start_date: string, end_date: string, deposit: number,
-        fee: number, tenant_name: string, tenant_email: string, tenant_number: string) {
+
+    constructor(id: number, apartment_id: number, start_date: string, end_date: string, deposit: any,
+        fee: any, tenant_name: string, tenant_email: string, tenant_number: string) {
         this.id = id;
         this.apartment_id = apartment_id;
         this.start_date = start_date;

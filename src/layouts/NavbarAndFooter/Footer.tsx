@@ -8,23 +8,13 @@ export const Footer = () => {
                 <p className='col-md-4 text-white'>© Estate Agency App</p>
                 <ul className='nav navbar-dark justify-content-end'>
                 <li className='nav-item'>
-                        <NavLink className='nav-link px-2 text-white' to='search'>
-                            Wyszukiwanie
+                        <NavLink className='nav-link px-2 text-white' to='/search'>
+                            Zarządzanie
                         </NavLink>
                     </li>
                     <li className='nav-item'>
                         <a className='nav-link px-2 text-white'>
-                            Informacje
-                        </a>
-                    </li>
-                    <li className='nav-item'>
-                        <a className='nav-link px-2 text-white'>
-                            Usterki
-                        </a>
-                    </li>
-                    <li className='nav-item'>
-                        <a className='nav-link px-2 text-white'>
-                            Rachunki
+                            Powiadomienia
                         </a>
                     </li>
                 </ul>
